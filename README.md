@@ -1,4 +1,4 @@
 # BookStore
 
 Prueba técnica para DevZeros 
-Gestión de libros de una librería (CRUD), utilizando .Ner Core en el Backend y Angular en el FrontEnd
+Gestión de libros de una librería (CRUD), utilizando .Net Core en el Backend y Angular en el FrontEnd
