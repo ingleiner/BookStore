@@ -1,11 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using BookStore.Data.Entities;
+using System.ComponentModel.DataAnnotations;
 
-namespace BookStore.Data.Entities
+namespace BookStore.DTOs
 {
-    public class Book
+    public class BookCreationDTO
     {
-        public int Id { get; set; }
-
         [Display(Name = "Título del libro")]
         [MaxLength(50)]
         [Required(ErrorMessage = "El Campo {0} es obligatorio")]
@@ -16,14 +15,9 @@ namespace BookStore.Data.Entities
         [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}", ApplyFormatInEditMode = true)]
         [DataType(DataType.Date)]
         public DateTime PublicationDate { get; set; }
-
+        public List<int> AuthorsId { get; set; }
         public int PublisherId { get; set; }
         public int GenreId { get; set; }
-
-
-        public ICollection<AuthorBook> AuthorsBooks { get; set; }
-        public virtual Genre Genre { get; set; } 
-        public virtual Publisher Publisher { get; set; }   
 
     }
 }

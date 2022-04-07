@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BookStore.Data.Entities
+namespace BookStore.DTOs
 {
-    public class Author
+    public class AuthorDTO
     {
         public int Id { get; set; }
 
@@ -15,8 +15,5 @@ namespace BookStore.Data.Entities
         [MaxLength(100)]
         [Required(ErrorMessage = "El Campo {0} es obligatorio")]
         public string LastName { get; set; }
-
-        public ICollection<AuthorBook> AuthorsBooks { get; set; }
-
     }
 }

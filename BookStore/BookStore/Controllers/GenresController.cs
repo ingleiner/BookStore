@@ -1,6 +1,10 @@
 ﻿#nullable disable
+using AutoMapper;
 using BookStore.Data;
 using BookStore.Data.Entities;
+using BookStore.DTOs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,70 +12,62 @@ namespace BookStore.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class GenresController : ControllerBase
     {
         private readonly DataContext _context;
+        private readonly IMapper _mapper;
 
-        public GenresController(DataContext context)
+        public GenresController(DataContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Genre>>> GetGenres()
+        public async Task<ActionResult<IEnumerable<GenreDTO>>> GetGenres()
         {
-            return await _context.Genres.ToListAsync();
+            var genres =  await _context.Genres.ToListAsync();
+            return _mapper.Map<List<GenreDTO>>(genres);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Genre>> GetGenre(int id)
+        public async Task<ActionResult<GenreDTO>> GetGenre(int id)
         {
-            var genre = await _context.Genres.FindAsync(id);
+            var genre = await _context.Genres.FirstOrDefaultAsync( g => g.Id == id);
 
             if (genre == null)
             {
                 return NotFound();
             }
 
-            return genre;
+            return _mapper.Map<GenreDTO>(genre);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutGenre(int id, Genre genre)
+        public async Task<IActionResult> PutGenre(int id, GenreCreationDTO genreCreationDTO)
         {
-            if (id != genre.Id)
+            var genreBD = await _context.Genres.AnyAsync(g => g.Id == id);
+            if (!genreBD)
             {
                 return BadRequest();
             }
-
-            _context.Entry(genre).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!GenreExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
+            var genre = _mapper.Map<Genre>(genreCreationDTO);
+            genre.Id = id;
+            _context.Update(genre);
+            await _context.SaveChangesAsync();
             return NoContent();
         }
 
         [HttpPost]
-        public async Task<ActionResult<Genre>> PostGenre(Genre genre)
+        public async Task<ActionResult<Genre>> PostGenre(GenreCreationDTO genreCreationDTO)
         {
+            var genre = _mapper.Map<Genre>(genreCreationDTO);  
+
             _context.Genres.Add(genre);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetGenre", new { id = genre.Id }, genre);
+            return CreatedAtAction("GetGenre", new { id = genreCreationDTO.Name }, genreCreationDTO);
         }
 
         [HttpDelete("{id}")]

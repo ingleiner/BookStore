@@ -1,6 +1,10 @@
 ﻿#nullable disable
+using AutoMapper;
 using BookStore.Data;
 using BookStore.Data.Entities;
+using BookStore.DTOs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,70 +12,70 @@ namespace BookStore.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+   // [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class AuthorsController : ControllerBase
     {
         private readonly DataContext _context;
+        private readonly IMapper _mapper;
 
-        public AuthorsController(DataContext context)
+        public AuthorsController(DataContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Author>>> GetAuthors()
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<AuthorDTO>>> GetAuthors()
         {
-            return await _context.Authors.ToListAsync();
+            var authors =  await _context.Authors.ToListAsync();
+            return _mapper.Map<List<AuthorDTO>>(authors);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Author>> GetAuthor(int id)
+        public async Task<ActionResult<AuthorDTOWhitBooks>> GetAuthor(int id)
         {
-            var author = await _context.Authors.FindAsync(id);
+            var author = await _context.Authors
+                .Include(b => b.AuthorsBooks)
+                .ThenInclude(bDTO => bDTO.Book)
+                .FirstOrDefaultAsync(a => a.Id == id);
 
             if (author == null)
             {
                 return NotFound();
             }
 
-            return author;
+            return _mapper.Map<AuthorDTOWhitBooks>(author);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutAuthor(int id, Author author)
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> PutAuthor(AuthorCreationDTO authorCreationDTO, int id)
         {
-            if (id != author.Id)
+
+            var authorExis = await _context.Authors.AnyAsync(a => a.Id == id);
+
+            if(!authorExis)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(author).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!AuthorExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
+            var author = _mapper.Map<Author>(authorCreationDTO);
+            author.Id = id;
+            _context.Update(author);
+            await _context.SaveChangesAsync();
             return NoContent();
         }
 
         [HttpPost]
-        public async Task<ActionResult<Author>> PostAuthor(Author author)
+        public async Task<ActionResult<Author>> PostAuthor(AuthorCreationDTO authorCreationDTO)
         {
+           var author = _mapper.Map<Author>(authorCreationDTO);
+
             _context.Authors.Add(author);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetAuthor", new { id = author.Id }, author);
+            var authorDTO = _mapper.Map<AuthorDTO>(author);
+            return CreatedAtAction("GetAuthor", new { id = author.Id }, authorDTO);
         }
 
         [HttpDelete("{id}")]
