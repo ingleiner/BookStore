@@ -30,6 +30,7 @@ namespace BookStore.Controllers
             var books = await _context.Books.Include(b => b.AuthorsBooks)
                 .ThenInclude(ab => ab.Author)
                 .ToListAsync();
+
             return _mapper.Map<List<BooksWhitAuthors>>(books);    
         }
 
