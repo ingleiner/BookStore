@@ -22,13 +22,15 @@ namespace BookStore.Utilities
 
             CreateMap<Book, BookDTO>();
 
+            CreateMap<Genre, GenreDTO>();
+            CreateMap<Publisher, PublisherDTO>();
             CreateMap<Book, BooksWhitAuthors>()
-                .ForMember(bDTO => bDTO.Authors, op => op.MapFrom(MapBookDTOAuthors)); 
+                .ForMember(bDTO => bDTO.Authors, op => op.MapFrom(MapBookDTOAuthors));
 
             CreateMap<GenreCreationDTO, Genre>();
-            CreateMap<Genre, GenreDTO>();
+            
             CreateMap<PublisherCreationDTO, Publisher>();
-            CreateMap<Publisher, PublisherDTO>();
+            
             
         }
 

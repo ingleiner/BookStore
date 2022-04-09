@@ -1,4 +1,5 @@
 ﻿using BookStore.Users;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -10,6 +11,7 @@ namespace BookStore.Controllers
 {
     [ApiController]
     [Route("api/accounts")]
+    [EnableCors("allorigin")]
     public class AccountsController : ControllerBase
     {
         private readonly UserManager<IdentityUser> _userManager;
@@ -55,9 +57,8 @@ namespace BookStore.Controllers
             }
             else
             {
-                return BadRequest("Login Incorrecto");
+                return BadRequest("error");
             }
-
         }
 
         //Respuesta a autenticación de usuario

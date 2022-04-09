@@ -56,6 +56,12 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+builder.Services.AddCors(options => {
+    options.AddPolicy("allorigin",
+        builder => builder.WithOrigins("fandres90-001-site3.itempurl.com", "http://localhost:4200", "https://www.apirequest.io", "https://localhost:7165", "http://192.168.1.56:8080").
+        WithMethods("GET", "POST", "PUT", "DELETE").AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());
+});
+
 builder.Services.AddAutoMapper(typeof(Program));
 
 var app = builder.Build();
@@ -69,6 +75,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseCors();
 
 app.MapControllers();
 

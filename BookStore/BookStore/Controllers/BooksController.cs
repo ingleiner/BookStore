@@ -5,6 +5,7 @@ using BookStore.Data.Entities;
 using BookStore.DTOs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,7 @@ namespace BookStore.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [EnableCors("allorigin")]
     //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class BooksController : ControllerBase
     {
@@ -27,8 +29,9 @@ namespace BookStore.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BooksWhitAuthors>>> GetBooks()
         {
-            var books = await _context.Books.Include(b => b.AuthorsBooks)
-                .ThenInclude(ab => ab.Author)
+            var books = await _context.Books
+                .Include(ab => ab.AuthorsBooks)
+                .ThenInclude(ab => ab.Author).Include(ge=> ge.Genre).Include(pu => pu.Publisher)
                 .ToListAsync();
 
             return _mapper.Map<List<BooksWhitAuthors>>(books);    
@@ -37,15 +40,16 @@ namespace BookStore.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<BooksWhitAuthors>> GetBook(int id)
         {
-            var book = await _context.Books.Include(b => b.AuthorsBooks)
+            var book = await _context.Books
+                .Include(ab => ab.AuthorsBooks)
                 .ThenInclude(ab => ab.Author)
-                .FirstOrDefaultAsync(b => b.Id == id);
+                .Include(ge => ge.Genre).Include(pu => pu.Publisher)
+                .FirstOrDefaultAsync(ab =>ab.Id == id);
 
             if (book == null)
             {
                 return NotFound();
             }
-
             return _mapper.Map<BooksWhitAuthors>(book);
         }
 
@@ -54,7 +58,7 @@ namespace BookStore.Controllers
         {
             
             var bookDB = await _context.Books
-                .Include(ab => ab.AuthorsBooks)
+                .Include(b => b.AuthorsBooks)
                 .FirstOrDefaultAsync(b => b.Id==id);
             if (bookDB == null)
             {
@@ -63,7 +67,7 @@ namespace BookStore.Controllers
 
             bookDB = _mapper.Map(bookUpDateDTO, bookDB);
             await _context.SaveChangesAsync();
-            return NoContent();
+            return Ok("200");
         }
 
         [HttpPost]
@@ -75,20 +79,22 @@ namespace BookStore.Controllers
             }
             var authorsIds = await _context.Authors.Where(a => bookCreationDTO.AuthorsId
             .Contains(a.Id)).Select(au => au.Id).ToListAsync();
+            var genre = await _context.Genres.FirstOrDefaultAsync(g => g.Id == bookCreationDTO.GenreId);
+            var publisher = await _context.Publishers.FirstOrDefaultAsync(p => p.Id == bookCreationDTO.PublisherId);
             var book = _mapper.Map<Book>(bookCreationDTO);
 
             if(bookCreationDTO.AuthorsId.Count != authorsIds.Count)
             {
                 return BadRequest("No Existe uno de los autores enviados");
             }
-            //if(bookCreationDTO.PublisherId !== publisherID)
-            //{
 
-            //}
-            
+            book.GenreId = bookCreationDTO.GenreId;
+            book.PublisherId = bookCreationDTO.PublisherId;
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
-            return Ok();
+
+            var bookDTO = _mapper.Map<BookDTO>(book);
+            return Ok("200");
         }
 
         [HttpDelete("{id}")]
